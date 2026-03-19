@@ -1,0 +1,4 @@
+This homework asks for a simple frequency analysis program.
+The script reads a text file, counts the letters, and prints their percentages.
+After that, it builds a rough guess for a monoalphabetic cipher by matching common letters.
+The result is not perfect for every text, but it gives a clear starting point for manual correction.
