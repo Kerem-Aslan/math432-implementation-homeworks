@@ -1,62 +1,62 @@
 # Homework 1
 
-Bu klasör iki soru için Python çözümlerini içerir.
+This folder contains Python solutions for two questions.
 
-## Dosyalar
+## Files
 
-- `frequency_analysis.py`: harf frekansı analizi ve monoalphabetic cipher çözümleme
-- `permutation_polynomials_z26.py`: Z26 üzerinde derece 5 permütasyon polinomlarını sayar
-- `samples/plain_english.txt`: İngilizce düz metin örneği
-- `samples/cipher_english.txt`: İngilizce şifreli metin örneği
-- `samples/plain_turkish.txt`: Türkçe düz metin örneği
-- `samples/cipher_turkish.txt`: Türkçe şifreli metin örneği
+- `frequency_analysis.py`: letter frequency analysis and monoalphabetic cipher decryption
+- `permutation_polynomials_z26.py`: counts degree-5 permutation polynomials over Z26
+- `samples/plain_english.txt`: sample English plaintext
+- `samples/cipher_english.txt`: sample English ciphertext
+- `samples/plain_turkish.txt`: sample Turkish plaintext
+- `samples/cipher_turkish.txt`: sample Turkish ciphertext
 
-## 1. Soru: Frequency Analysis
+## 1. Question: Frequency Analysis
 
-Script iki dil destekler:
+The script supports two languages:
 
 - `english`
 - `turkish`
 
-Komutları `Homework1` klasörü içinde çalıştırabilirsiniz.
+You can run the commands inside the `Homework1` folder.
 
-### İngilizce metin frekans analizi
+### English text frequency analysis
 
 ```powershell
 python frequency_analysis.py analyze samples/plain_english.txt --language english
 ```
 
-### Türkçe metin frekans analizi
+### Turkish text frequency analysis
 
 ```powershell
 python frequency_analysis.py analyze samples/plain_turkish.txt --language turkish
 ```
 
-### İngilizce şifreli metni çözme
+### Decrypting the English ciphertext
 
 ```powershell
 python frequency_analysis.py decrypt samples/cipher_english.txt --language english
 ```
 
-### Türkçe şifreli metni çözme
+### Decrypting the Turkish ciphertext
 
 ```powershell
 python frequency_analysis.py decrypt samples/cipher_turkish.txt --language turkish
 ```
 
-`decrypt` komutu doğrudan frekans sırasına göre tahmini eşleme kurar.
+The `decrypt` command directly builds an estimated mapping based on frequency order.
 
-## 2. Soru: Z26 Üzerinde Derece 5 Permütasyon Polinomları
+## 2. Question: Degree-5 Permutation Polynomials over Z26
 
-Çalıştırmak için:
+To run:
 
 ```powershell
 python permutation_polynomials_z26.py
 ```
 
-Program önce Z2 ve Z13 üzerindeki geçerli durumları sayar. Sonra Chinese Remainder Theorem kullanarak Z26 sonucunu hesaplar.
+The program first counts the valid cases over Z2 and Z13. It then computes the result for Z26 using the Chinese Remainder Theorem.
 
-## Not
+## Note
 
-Tüm örnek dosyalar UTF-8 kodlaması ile kaydedildi.
-Türkçe örnek metinlerde `ç, ğ, ı, İ, ö, ş, ü` harfleri özellikle yer alır.
+All sample files are saved with UTF-8 encoding.
+The Turkish sample texts intentionally include the letters `ç, ğ, ı, İ, ö, ş, ü`.
