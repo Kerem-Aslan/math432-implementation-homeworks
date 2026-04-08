@@ -157,35 +157,37 @@ int main(void) {
     }
     // encryption mode
     if (mode == 1) {
-        printf("\nPlaintext (16 hex): ");
+        printf("\nPlaintext (max 16 hex chars, shorter inputs are left-padded with 00): ");
         if (scanf_s("%16llx", &input_value) != 1) {
             printf("Invalid plaintext input.\n");
             exit_code = 1;
             goto finish;
         }
-        printf("Key (16 hex): ");
+        printf("Key (max 16 hex chars, shorter inputs are left-padded with 00): ");
         if (scanf_s("%16llx", &key_value) != 1) {
             printf("Invalid key input.\n");
             exit_code = 1;
             goto finish;
         }
+        printf("Inputs shorter than 16 hex chars were treated as left-padded with 00 bytes.\n");
         uint64_t cipher = des_encrypt_block((uint64_t)input_value, (uint64_t)key_value);
         printf("Ciphertext: %016llX\n", (unsigned long long)cipher);
     }
     // decryption mode
     else if (mode == 2) {
-        printf("\nCiphertext (16 hex): ");
+        printf("\nCiphertext (max 16 hex chars, shorter inputs are left-padded with 00): ");
         if (scanf_s("%16llx", &input_value) != 1) {
             printf("Invalid ciphertext input.\n");
             exit_code = 1;
             goto finish;
         }
-        printf("Key (16 hex): ");
+        printf("Key (max 16 hex chars, shorter inputs are left-padded with 00): ");
         if (scanf_s("%16llx", &key_value) != 1) {
             printf("Invalid key input.\n");
             exit_code = 1;
             goto finish;
         }
+        printf("Inputs shorter than 16 hex chars were treated as left-padded with 00 bytes.\n");
         uint64_t plain = des_decrypt_block((uint64_t)input_value, (uint64_t)key_value);
         printf("Plaintext: %016llX\n", (unsigned long long)plain);
     }
