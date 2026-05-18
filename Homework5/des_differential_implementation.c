@@ -315,31 +315,31 @@ static void build_ddt_tables(uint8_t ddt[8][64][16]) {
     }
 }
 
-static void print_ddt_box(size_t box, uint8_t ddt[64][16]) {
-    printf("\nS-box %zu differential distribution table\n", box + 1);
-    printf("      ");
+static void print_ddt_box(FILE *out, size_t box, uint8_t ddt[64][16]) {
+    fprintf(out, "\nS-box %zu differential distribution table\n", box + 1);
+    fprintf(out, "      ");
     for (size_t dy = 0; dy < 16; dy++) {
-        printf("%3X", (unsigned)dy);
+        fprintf(out, "%3X", (unsigned)dy);
     }
-    printf("   | best\n");
+    fprintf(out, "   | best\n");
 
     for (size_t dx = 0; dx < 64; dx++) {
         unsigned best_count = 0;
         size_t best_dy = 0;
-        printf("%02X : ", (unsigned)dx);
+        fprintf(out, "%02X : ", (unsigned)dx);
         for (size_t dy = 0; dy < 16; dy++) {
             unsigned count = ddt[dx][dy];
-            printf("%3u", count);
+            fprintf(out, "%3u", count);
             if (count > best_count || (count == best_count && dy < best_dy)) {
                 best_count = count;
                 best_dy = dy;
             }
         }
-        printf("   | %02X (%u/64)\n", (unsigned)best_dy, best_count);
+        fprintf(out, "   | %02X (%u/64)\n", (unsigned)best_dy, best_count);
     }
 }
 
-static void print_ddt_summary(uint8_t ddt[8][64][16]) {
+static void print_ddt_summary(FILE *out, uint8_t ddt[8][64][16]) {
     for (size_t box = 0; box < 8; box++) {
         unsigned best_count = 0;
         size_t best_dx = 0;
@@ -356,9 +356,17 @@ static void print_ddt_summary(uint8_t ddt[8][64][16]) {
             }
         }
 
-        printf("S-box %zu max entry: dx=%02X -> dy=%02X with probability %u/64 = %.4f\n",
-               box + 1, (unsigned)best_dx, (unsigned)best_dy, best_count, (double)best_count / 64.0);
+        fprintf(out, "S-box %zu max entry: dx=%02X -> dy=%02X with probability %u/64 = %.4f\n",
+                box + 1, (unsigned)best_dx, (unsigned)best_dy, best_count, (double)best_count / 64.0);
     }
+}
+
+static void print_ddt_report(FILE *out, uint8_t ddt[8][64][16]) {
+    for (size_t box = 0; box < 8; box++) {
+        print_ddt_box(out, box, ddt[box]);
+    }
+    fprintf(out, "\nSummary\n");
+    print_ddt_summary(out, ddt);
 }
 
 static uint8_t best_output_diff(uint8_t ddt[64][16], uint8_t dx, uint8_t *best_count) {
@@ -494,6 +502,9 @@ static void find_best_trail(uint8_t ddt[8][64][16], Trail *best, uint32_t *best_
     } else {
         *best = best_any;
     }
+
+    *best_dl0 = best->dl[0];
+    *best_dr0 = best->dr[0];
 }
 
 static void run_experiment(const Trail *trail, const uint64_t subkeys[16], size_t pair_count) {
@@ -518,6 +529,17 @@ static void run_experiment(const Trail *trail, const uint64_t subkeys[16], size_
     printf("Empirical probability : %.12f\n", pair_count == 0 ? 0.0 : (double)hits / (double)pair_count);
 }
 
+static int prompt_yes_no(const char *prompt) {
+    char line[32];
+
+    printf("%s", prompt);
+    if (!fgets(line, sizeof(line), stdin)) {
+        return 0;
+    }
+
+    return line[0] == 'y' || line[0] == 'Y';
+}
+
 int main(void) {
     uint8_t ddt[8][64][16];
     uint64_t key64 = 0;
@@ -537,11 +559,19 @@ int main(void) {
 
     int mode = (int)strtol(line, NULL, 10);
     if (mode == 1) {
-        for (size_t box = 0; box < 8; box++) {
-            print_ddt_box(box, ddt[box]);
+        print_ddt_report(stdout, ddt);
+
+        if (prompt_yes_no("\nWrite the same output to des_sbox_ddt.txt as well? (y/n): ")) {
+            FILE *txt = fopen("des_sbox_ddt.txt", "w");
+            if (!txt) {
+                fprintf(stderr, "Could not create des_sbox_ddt.txt.\n");
+                return 1;
+            }
+
+            print_ddt_report(txt, ddt);
+            fclose(txt);
+            printf("Saved to des_sbox_ddt.txt\n");
         }
-        printf("\nSummary\n");
-        print_ddt_summary(ddt);
         return 0;
     }
 
