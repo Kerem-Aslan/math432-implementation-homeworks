@@ -1,10 +1,15 @@
+#ifndef DES_COMMON_H
+#define DES_COMMON_H
+
 #include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static const int IP[64] = {
+#define DES_ROUNDS 5
+
+static const int DES_IP[64] = {
     58, 50, 42, 34, 26, 18, 10, 2,
     60, 52, 44, 36, 28, 20, 12, 4,
     62, 54, 46, 38, 30, 22, 14, 6,
@@ -15,7 +20,7 @@ static const int IP[64] = {
     63, 55, 47, 39, 31, 23, 15, 7
 };
 
-static const int FP[64] = {
+static const int DES_FP[64] = {
     40, 8, 48, 16, 56, 24, 64, 32,
     39, 7, 47, 15, 55, 23, 63, 31,
     38, 6, 46, 14, 54, 22, 62, 30,
@@ -26,7 +31,7 @@ static const int FP[64] = {
     33, 1, 41, 9, 49, 17, 57, 25
 };
 
-static const int E[48] = {
+static const int DES_E[48] = {
     32, 1, 2, 3, 4, 5,
     4, 5, 6, 7, 8, 9,
     8, 9, 10, 11, 12, 13,
@@ -37,7 +42,7 @@ static const int E[48] = {
     28, 29, 30, 31, 32, 1
 };
 
-static const int P[32] = {
+static const int DES_P[32] = {
     16, 7, 20, 21,
     29, 12, 28, 17,
     1, 15, 23, 26,
@@ -48,7 +53,7 @@ static const int P[32] = {
     22, 11, 4, 25
 };
 
-static const int PC1[56] = {
+static const int DES_PC1[56] = {
     57, 49, 41, 33, 25, 17, 9,
     1, 58, 50, 42, 34, 26, 18,
     10, 2, 59, 51, 43, 35, 27,
@@ -59,7 +64,7 @@ static const int PC1[56] = {
     21, 13, 5, 28, 20, 12, 4
 };
 
-static const int PC2[48] = {
+static const int DES_PC2[48] = {
     14, 17, 11, 24, 1, 5,
     3, 28, 15, 6, 21, 10,
     23, 19, 12, 4, 26, 8,
@@ -70,12 +75,12 @@ static const int PC2[48] = {
     46, 42, 50, 36, 29, 32
 };
 
-static const int SHIFTS[16] = {
+static const int DES_SHIFTS[16] = {
     1, 1, 2, 2, 2, 2, 2, 2,
     1, 2, 2, 2, 2, 2, 2, 1
 };
 
-static const uint8_t S[8][64] = {
+static const uint8_t DES_S[8][64] = {
     {
         14, 4, 13, 1, 2, 15, 11, 8,
         3, 10, 6, 12, 5, 9, 0, 7,
@@ -159,36 +164,30 @@ static const uint8_t S[8][64] = {
 };
 
 typedef struct {
-    uint32_t dl[6];
-    uint32_t dr[6];
-    uint32_t raw_f[5];
-    uint32_t f_out[5];
-    uint64_t expanded[5];
-    double round_prob[5];
+    uint32_t dl[DES_ROUNDS + 1];
+    uint32_t dr[DES_ROUNDS + 1];
+    uint32_t raw_f[DES_ROUNDS];
+    uint32_t f_out[DES_ROUNDS];
+    uint64_t expanded[DES_ROUNDS];
+    double round_prob[DES_ROUNDS];
     double total_prob;
 } Trail;
 
-static void chomp_line(char *s) {
+static inline void chomp_line(char *s) {
     size_t n = strlen(s);
     while (n > 0 && (s[n - 1] == '\n' || s[n - 1] == '\r')) {
         s[--n] = '\0';
     }
 }
 
-static int hex_nibble(int c) {
-    if (c >= '0' && c <= '9') {
-        return c - '0';
-    }
-    if (c >= 'a' && c <= 'f') {
-        return 10 + (c - 'a');
-    }
-    if (c >= 'A' && c <= 'F') {
-        return 10 + (c - 'A');
-    }
+static inline int hex_nibble(int c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
+    if (c >= 'A' && c <= 'F') return 10 + (c - 'A');
     return -1;
 }
 
-static int parse_u64_line(const char *line, uint64_t *out) {
+static inline int parse_u64_line(const char *line, uint64_t *out) {
     const char *p = line;
     while (*p && isspace((unsigned char)*p)) {
         p++;
@@ -224,7 +223,7 @@ static int parse_u64_line(const char *line, uint64_t *out) {
     return 0;
 }
 
-static int parse_size_t_line(const char *line, size_t *out) {
+static inline int parse_size_t_line(const char *line, size_t *out) {
     char *end = NULL;
     unsigned long long v = strtoull(line, &end, 10);
     if (end == line) {
@@ -240,7 +239,7 @@ static int parse_size_t_line(const char *line, size_t *out) {
     return 0;
 }
 
-static uint64_t permute(uint64_t input, const int *table, size_t out_bits, size_t in_bits) {
+static inline uint64_t permute(uint64_t input, const int *table, size_t out_bits, size_t in_bits) {
     uint64_t out = 0;
     for (size_t i = 0; i < out_bits; i++) {
         size_t src = (size_t)table[i];
@@ -250,26 +249,26 @@ static uint64_t permute(uint64_t input, const int *table, size_t out_bits, size_
     return out;
 }
 
-static uint64_t rotl28(uint64_t value, int shift) {
+static inline uint64_t rotl28(uint64_t value, int shift) {
     value &= 0x0FFFFFFFULL;
     return ((value << shift) | (value >> (28 - shift))) & 0x0FFFFFFFULL;
 }
 
-static void generate_subkeys(uint64_t key64, uint64_t subkeys[16]) {
-    uint64_t key56 = permute(key64, PC1, 56, 64);
+static inline void generate_subkeys(uint64_t key64, uint64_t subkeys[16]) {
+    uint64_t key56 = permute(key64, DES_PC1, 56, 64);
     uint64_t c = (key56 >> 28) & 0x0FFFFFFFULL;
     uint64_t d = key56 & 0x0FFFFFFFULL;
 
     for (size_t round = 0; round < 16; round++) {
-        c = rotl28(c, SHIFTS[round]);
-        d = rotl28(d, SHIFTS[round]);
+        c = rotl28(c, DES_SHIFTS[round]);
+        d = rotl28(d, DES_SHIFTS[round]);
         uint64_t cd = (c << 28) | d;
-        subkeys[round] = permute(cd, PC2, 48, 56);
+        subkeys[round] = permute(cd, DES_PC2, 48, 56);
     }
 }
 
-static uint32_t feistel(uint32_t right32, uint64_t subkey48) {
-    uint64_t expanded48 = permute((uint64_t)right32, E, 48, 32);
+static inline uint32_t feistel(uint32_t right32, uint64_t subkey48) {
+    uint64_t expanded48 = permute((uint64_t)right32, DES_E, 48, 32);
     uint64_t mixed48 = expanded48 ^ subkey48;
     uint32_t sbox_out32 = 0;
 
@@ -279,15 +278,15 @@ static uint32_t feistel(uint32_t right32, uint64_t subkey48) {
         uint8_t row = (uint8_t)(((chunk6 & 0x20U) >> 4) | (chunk6 & 0x01U));
         uint8_t col = (uint8_t)((chunk6 >> 1) & 0x0FU);
         uint8_t index = (uint8_t)(row * 16U + col);
-        uint8_t s_value = S[box][index];
+        uint8_t s_value = DES_S[box][index];
         sbox_out32 = (sbox_out32 << 4) | (uint32_t)(s_value & 0x0FU);
     }
 
-    return (uint32_t)permute((uint64_t)sbox_out32, P, 32, 32);
+    return (uint32_t)permute((uint64_t)sbox_out32, DES_P, 32, 32);
 }
 
-static uint64_t des_encrypt_rounds(uint64_t plaintext64, const uint64_t subkeys[16], int rounds) {
-    uint64_t ip_block = permute(plaintext64, IP, 64, 64);
+static inline uint64_t des_encrypt_rounds(uint64_t plaintext64, const uint64_t subkeys[16], int rounds) {
+    uint64_t ip_block = permute(plaintext64, DES_IP, 64, 64);
     uint32_t left = (uint32_t)(ip_block >> 32);
     uint32_t right = (uint32_t)(ip_block & 0xFFFFFFFFULL);
 
@@ -299,23 +298,23 @@ static uint64_t des_encrypt_rounds(uint64_t plaintext64, const uint64_t subkeys[
     }
 
     uint64_t preoutput = ((uint64_t)right << 32) | (uint64_t)left;
-    return permute(preoutput, FP, 64, 64);
+    return permute(preoutput, DES_FP, 64, 64);
 }
 
-static void build_ddt_tables(uint8_t ddt[8][64][16]) {
+static inline void build_ddt_tables(uint8_t ddt[8][64][16]) {
     memset(ddt, 0, 8 * 64 * 16 * sizeof(uint8_t));
     for (size_t box = 0; box < 8; box++) {
         for (size_t dx = 0; dx < 64; dx++) {
             for (size_t x = 0; x < 64; x++) {
-                uint8_t y1 = S[box][x];
-                uint8_t y2 = S[box][x ^ dx];
+                uint8_t y1 = DES_S[box][x];
+                uint8_t y2 = DES_S[box][x ^ dx];
                 ddt[box][dx][y1 ^ y2]++;
             }
         }
     }
 }
 
-static void print_ddt_box(FILE *out, size_t box, uint8_t ddt[64][16]) {
+static inline void print_ddt_box(FILE *out, size_t box, uint8_t ddt[64][16]) {
     fprintf(out, "\nS-box %zu differential distribution table\n", box + 1);
     fprintf(out, "      ");
     for (size_t dy = 0; dy < 16; dy++) {
@@ -339,7 +338,7 @@ static void print_ddt_box(FILE *out, size_t box, uint8_t ddt[64][16]) {
     }
 }
 
-static void print_ddt_summary(FILE *out, uint8_t ddt[8][64][16]) {
+static inline void print_ddt_summary(FILE *out, uint8_t ddt[8][64][16]) {
     for (size_t box = 0; box < 8; box++) {
         unsigned best_count = 0;
         size_t best_dx = 0;
@@ -361,7 +360,7 @@ static void print_ddt_summary(FILE *out, uint8_t ddt[8][64][16]) {
     }
 }
 
-static void print_ddt_report(FILE *out, uint8_t ddt[8][64][16]) {
+static inline void print_ddt_report(FILE *out, uint8_t ddt[8][64][16]) {
     for (size_t box = 0; box < 8; box++) {
         print_ddt_box(out, box, ddt[box]);
     }
@@ -369,7 +368,7 @@ static void print_ddt_report(FILE *out, uint8_t ddt[8][64][16]) {
     print_ddt_summary(out, ddt);
 }
 
-static uint8_t best_output_diff(uint8_t ddt[64][16], uint8_t dx, uint8_t *best_count) {
+static inline uint8_t best_output_diff(uint8_t ddt[64][16], uint8_t dx, uint8_t *best_count) {
     uint8_t chosen = 0;
     uint8_t count = 0;
     for (uint8_t dy = 0; dy < 16; dy++) {
@@ -383,14 +382,14 @@ static uint8_t best_output_diff(uint8_t ddt[64][16], uint8_t dx, uint8_t *best_c
     return chosen;
 }
 
-static void build_trail(uint32_t dl0, uint32_t dr0, uint8_t ddt[8][64][16], Trail *trail) {
+static inline void build_trail(uint32_t dl0, uint32_t dr0, uint8_t ddt[8][64][16], Trail *trail) {
     memset(trail, 0, sizeof(*trail));
     trail->dl[0] = dl0;
     trail->dr[0] = dr0;
     trail->total_prob = 1.0;
 
-    for (size_t round = 0; round < 5; round++) {
-        uint64_t expanded = permute((uint64_t)trail->dr[round], E, 48, 32);
+    for (size_t round = 0; round < DES_ROUNDS; round++) {
+        uint64_t expanded = permute((uint64_t)trail->dr[round], DES_E, 48, 32);
         trail->expanded[round] = expanded;
 
         uint32_t raw_f = 0;
@@ -405,7 +404,7 @@ static void build_trail(uint32_t dl0, uint32_t dr0, uint8_t ddt[8][64][16], Trai
         }
 
         trail->raw_f[round] = raw_f;
-        trail->f_out[round] = (uint32_t)permute((uint64_t)raw_f, P, 32, 32);
+        trail->f_out[round] = (uint32_t)permute((uint64_t)raw_f, DES_P, 32, 32);
         trail->round_prob[round] = round_prob;
         trail->total_prob *= round_prob;
 
@@ -414,19 +413,19 @@ static void build_trail(uint32_t dl0, uint32_t dr0, uint8_t ddt[8][64][16], Trai
     }
 }
 
-static int trail_is_non_iterative(const Trail *trail) {
-    return trail->dl[0] != trail->dl[5] || trail->dr[0] != trail->dr[5];
+static inline int trail_is_non_iterative(const Trail *trail) {
+    return trail->dl[0] != trail->dl[DES_ROUNDS] || trail->dr[0] != trail->dr[DES_ROUNDS];
 }
 
-static void print_state_diff(const char *label, uint32_t dl, uint32_t dr) {
+static inline void print_state_diff(const char *label, uint32_t dl, uint32_t dr) {
     printf("%sdL=%08X  dR=%08X\n", label, dl, dr);
 }
 
-static void print_trail(const Trail *trail) {
+static inline void print_trail(const Trail *trail) {
     printf("\nConstructed 5-round differential characteristic\n");
     print_state_diff("Round 0 : ", trail->dl[0], trail->dr[0]);
 
-    for (size_t round = 0; round < 5; round++) {
+    for (size_t round = 0; round < DES_ROUNDS; round++) {
         printf("Round %zu : ", round + 1);
         printf("dF=%08X  p=%.6e\n", trail->f_out[round], trail->round_prob[round]);
         printf("          S-box input/output diffs: ");
@@ -439,23 +438,23 @@ static void print_trail(const Trail *trail) {
         print_state_diff("          Next : ", trail->dl[round + 1], trail->dr[round + 1]);
     }
 
-    uint64_t start_plain = permute(((uint64_t)trail->dl[0] << 32) | (uint64_t)trail->dr[0], FP, 64, 64);
-    uint64_t end_cipher = permute(((uint64_t)trail->dl[5] << 32) | (uint64_t)trail->dr[5], FP, 64, 64);
+    uint64_t start_plain = permute(((uint64_t)trail->dl[0] << 32) | (uint64_t)trail->dr[0], DES_FP, 64, 64);
+    uint64_t end_cipher = permute(((uint64_t)trail->dl[DES_ROUNDS] << 32) | (uint64_t)trail->dr[DES_ROUNDS], DES_FP, 64, 64);
 
     printf("\nInternal start difference: %08X %08X\n", trail->dl[0], trail->dr[0]);
     printf("Equivalent plaintext difference : %016llX\n", (unsigned long long)start_plain);
-    printf("Predicted final internal diff   : %08X %08X\n", trail->dl[5], trail->dr[5]);
+    printf("Predicted final internal diff   : %08X %08X\n", trail->dl[DES_ROUNDS], trail->dr[DES_ROUNDS]);
     printf("Equivalent ciphertext diff      : %016llX\n", (unsigned long long)end_cipher);
     printf("Theoretical trail probability   : %.12e\n", trail->total_prob);
 }
 
-static void xorshift64star_seed(uint64_t *state) {
+static inline void xorshift64star_seed(uint64_t *state) {
     if (*state == 0) {
         *state = 0x9E3779B97F4A7C15ULL;
     }
 }
 
-static uint64_t xorshift64star(uint64_t *state) {
+static inline uint64_t xorshift64star(uint64_t *state) {
     uint64_t x = *state;
     x ^= x >> 12;
     x ^= x << 25;
@@ -464,7 +463,7 @@ static uint64_t xorshift64star(uint64_t *state) {
     return x * 2685821657736338717ULL;
 }
 
-static void find_best_trail(uint8_t ddt[8][64][16], Trail *best, uint32_t *best_dl0, uint32_t *best_dr0) {
+static inline void find_best_trail(uint8_t ddt[8][64][16], Trail *best, uint32_t *best_dl0, uint32_t *best_dr0) {
     int have_non_iterative = 0;
     int have_any = 0;
     double best_non_iterative_prob = -1.0;
@@ -507,9 +506,9 @@ static void find_best_trail(uint8_t ddt[8][64][16], Trail *best, uint32_t *best_
     *best_dr0 = best->dr[0];
 }
 
-static void run_experiment(const Trail *trail, const uint64_t subkeys[16], size_t pair_count) {
-    uint64_t diff_plain = permute(((uint64_t)trail->dl[0] << 32) | (uint64_t)trail->dr[0], FP, 64, 64);
-    uint64_t diff_cipher = permute(((uint64_t)trail->dl[5] << 32) | (uint64_t)trail->dr[5], FP, 64, 64);
+static inline void run_experiment(const Trail *trail, const uint64_t subkeys[16], size_t pair_count) {
+    uint64_t diff_plain = permute(((uint64_t)trail->dl[0] << 32) | (uint64_t)trail->dr[0], DES_FP, 64, 64);
+    uint64_t diff_cipher = permute(((uint64_t)trail->dl[DES_ROUNDS] << 32) | (uint64_t)trail->dr[DES_ROUNDS], DES_FP, 64, 64);
     uint64_t rng = 0x123456789ABCDEF0ULL;
     size_t hits = 0;
 
@@ -517,8 +516,8 @@ static void run_experiment(const Trail *trail, const uint64_t subkeys[16], size_
     for (size_t i = 0; i < pair_count; i++) {
         uint64_t plain = xorshift64star(&rng);
         uint64_t other = plain ^ diff_plain;
-        uint64_t c1 = des_encrypt_rounds(plain, subkeys, 5);
-        uint64_t c2 = des_encrypt_rounds(other, subkeys, 5);
+        uint64_t c1 = des_encrypt_rounds(plain, subkeys, DES_ROUNDS);
+        uint64_t c2 = des_encrypt_rounds(other, subkeys, DES_ROUNDS);
         if ((c1 ^ c2) == diff_cipher) {
             hits++;
         }
@@ -529,96 +528,4 @@ static void run_experiment(const Trail *trail, const uint64_t subkeys[16], size_
     printf("Empirical probability : %.12f\n", pair_count == 0 ? 0.0 : (double)hits / (double)pair_count);
 }
 
-static int prompt_yes_no(const char *prompt) {
-    char line[32];
-
-    printf("%s", prompt);
-    if (!fgets(line, sizeof(line), stdin)) {
-        return 0;
-    }
-
-    return line[0] == 'y' || line[0] == 'Y';
-}
-
-int main(void) {
-    uint8_t ddt[8][64][16];
-    uint64_t key64 = 0;
-    uint64_t subkeys[16];
-    char line[256];
-
-    build_ddt_tables(ddt);
-
-    printf("DES differential analysis (Homework 5)\n");
-    printf("1) Print DES S-box DDTs\n");
-    printf("2) Construct and test a 5-round characteristic\n");
-    printf("Select mode: ");
-    if (!fgets(line, sizeof(line), stdin)) {
-        fprintf(stderr, "Input error.\n");
-        return 1;
-    }
-
-    int mode = (int)strtol(line, NULL, 10);
-    if (mode == 1) {
-        print_ddt_report(stdout, ddt);
-
-        if (prompt_yes_no("\nWrite the same output to des_sbox_ddt.txt as well? (y/n): ")) {
-            FILE *txt = fopen("des_sbox_ddt.txt", "w");
-            if (!txt) {
-                fprintf(stderr, "Could not create des_sbox_ddt.txt.\n");
-                return 1;
-            }
-
-            print_ddt_report(txt, ddt);
-            fclose(txt);
-            printf("Saved to des_sbox_ddt.txt\n");
-        }
-        return 0;
-    }
-
-    if (mode != 2) {
-        fprintf(stderr, "Select mode 1 or 2.\n");
-        return 1;
-    }
-
-    printf("Key (64-bit hex, optional 0x, default 0x133457799BBCDFF1): ");
-    if (!fgets(line, sizeof(line), stdin)) {
-        fprintf(stderr, "Input error.\n");
-        return 1;
-    }
-    chomp_line(line);
-    if (line[0] == '\0') {
-        key64 = 0x133457799BBCDFF1ULL;
-    } else {
-        if (parse_u64_line(line, &key64) != 0) {
-            fprintf(stderr, "Invalid key.\n");
-            return 1;
-        }
-    }
-
-    printf("Number of plaintext pairs to test: ");
-    if (!fgets(line, sizeof(line), stdin)) {
-        fprintf(stderr, "Input error.\n");
-        return 1;
-    }
-    size_t pair_count = 0;
-    if (parse_size_t_line(line, &pair_count) != 0 || pair_count == 0) {
-        fprintf(stderr, "Invalid pair count.\n");
-        return 1;
-    }
-
-    generate_subkeys(key64, subkeys);
-
-    Trail trail;
-    uint32_t start_dl0 = 0;
-    uint32_t start_dr0 = 0;
-    find_best_trail(ddt, &trail, &start_dl0, &start_dr0);
-
-    printf("\nBest automatically constructed non-iterative trail from one-bit right-half starts\n");
-    print_trail(&trail);
-    run_experiment(&trail, subkeys, pair_count);
-
-    printf("\nPress Enter to exit...");
-    fflush(stdout);
-    (void)getchar();
-    return 0;
-}
+#endif
